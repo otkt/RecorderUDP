@@ -95,7 +95,6 @@ public class MainActivity extends AppCompatActivity {
     }
     protected void onStart() {
         super.onStart();
-
         append_to_textView("onStart() executed");
     }
     protected void onResume() {
