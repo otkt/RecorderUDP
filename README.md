@@ -7,7 +7,9 @@ This android app captures auido from android devices microphone and sends these 
 
 
 # To capture and render these UDP packets:
-A python script used with python-sounddevice module in EXAMPLES folder. 
+A python script used with python-sounddevice module in EXAMPLES folder. https://github.com/ozayt/RecorderUDP/blob/master/EXAMPLES/recorderUDPswp100.py 
+
+python-sounddevice module:
 https://github.com/spatialaudio/python-sounddevice/
 
 # To use this real-time audio as input to other programs in Windows. 
