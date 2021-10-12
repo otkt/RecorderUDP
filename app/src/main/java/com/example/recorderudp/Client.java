@@ -1,15 +1,11 @@
 package com.example.recorderudp;
-import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.media.MicrophoneInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.provider.MediaStore;
 import android.util.Log;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -17,36 +13,32 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.List;
 
 
 class Client extends Thread {
     public static final String TAG = "Client";
-    public Handler mHandler;
-    public Handler mainHandler;
-    AudioRecord recorder;
-    DatagramSocket clientSocket;
-    static final int bytes_in_frames = 2304;
-    byte[] audioData = new byte[bytes_in_frames]; //udp packet frames
+    public Handler mHandler; //This threads handler
+    public Handler mainHandler; //UI thread handler
+    AudioRecord recorder; // Recorder to read digital signals from
+    DatagramSocket clientSocket; // UDP socket
+    static final int bytes_in_frames = 2304; //number of bytes per udp packet (currently random can be changed)
+    byte[] audioData = new byte[bytes_in_frames]; //udp packets that contain raw pcm audio data
     Boolean isRecording =false ;
-    Visualizer v;
+    Visualizer v; //UI object that shows microphone amplitude
     private final Object lock = new Object();
-    Runnable recordRun = () -> { //Runable responsible for sending mic data with UDP on recordRunT
+    Runnable recordRun = () -> { //Runnable responsible for sending live microphone data with UDP on recordRunT thread
         while(true) {
             if (isRecording) {
-                //long start2 = System.currentTimeMillis();
-                int res = recorder.read(audioData, 0, bytes_in_frames, AudioRecord.READ_BLOCKING);
-
-                //e_send_to_ui(" Number red or error: " + res);
+                //while recording keep reading microphone sensor and send UDP packets to server
+                recorder.read(audioData, 0, bytes_in_frames, AudioRecord.READ_BLOCKING);
                 DatagramPacket dp = new DatagramPacket(audioData, bytes_in_frames);
-                //long end2 = System.currentTimeMillis();
-                //e_send_to_ui("Elapsed Time in milli seconds: "+ (end2-start2));
                 try {
                     clientSocket.send(dp);
                 } catch (IOException e) {
                     logExpection(e);
                 }
             }else{
+                //if not recording send digital silence (all zeros)
                 try {
                     synchronized (lock){
                         /// send silence for 16 times
@@ -59,7 +51,8 @@ class Client extends Thread {
                                 logExpection(e);
                             }
                         }
-                        e_send_to_ui(" Waiting for recorder to send..");
+                        //block recordRunT thread until its woken up again to record
+                        e_send_to_ui("Stopped Waiting for recorder..");
                         lock.wait();
                     }
 
@@ -81,12 +74,12 @@ class Client extends Thread {
 
     }
 
-    public void run() { // Thread of Client responsible for handling ui send requests Thread 2
+    public void run() { // run method of Client thread ,  responsible for coordinating with UI
         try {
             clientSocket = new DatagramSocket();
             ip = InetAddress.getByName("192.168.0.12");
             clientSocket.connect(ip,port);
-            //Build Audio Recorder
+            //Build Audio Recorder with sample rate of 44100hz  , 2 channel(STEREO) , 2byte(16bit) amplitude resolution per sample
             minBuffSize =  AudioRecord.getMinBufferSize(44100,AudioFormat.CHANNEL_IN_STEREO,AudioFormat.ENCODING_PCM_16BIT);
             Log.i(TAG, (Thread.currentThread().getName() + ": minbufsize: "+minBuffSize));
             recorder = new AudioRecord.Builder()
@@ -97,45 +90,36 @@ class Client extends Thread {
                             .setChannelMask(AudioFormat.CHANNEL_IN_STEREO)
                             .build())
                     .setBufferSizeInBytes(2*minBuffSize)
-                    //.setBufferSizeInBytes(14112)
                     .build();
 
-            int recordingState  =recorder.getRecordingState();
-            List<MicrophoneInfo> list_mic_info  =recorder.getActiveMicrophones();
-            e_send_to_ui("Min buff Size : "+minBuffSize);
-           // e_send_to_ui(" Number of mic list : " + list_mic_info.size());
-            e_send_to_ui(" recorder.getBufferSizeInFrames() " + recorder.getBufferSizeInFrames());
-            e_send_to_ui(" recorder.getRecordingState(): " + recordingState);
+            
         } catch (SocketException e) {
             e.printStackTrace();
-            Log.i(TAG, (Thread.currentThread().getName() + ": Expection catched: "+e.getMessage()));
-            e_send_to_ui((Thread.currentThread().getName() + ": Expection catched: " + e.getMessage()));
+            logExpection(e);
         } catch (UnknownHostException e) {
             logExpection(e);
-        } catch (IOException e) {
-            logExpection(e);
         }
-        /// Other Stuff
+
         Thread recordRunT = new Thread(recordRun);
-        recordRunT.start();
+        recordRunT.start();/// Start thread for recording and streaming
 
         v = new Visualizer(mainHandler , audioData);
-        v.start();
+        v.start(); /// Start UI Visualizer that shows microphone signal amplitude
 
         Looper.prepare();
-
+        // Prepare to loop this thread
         mHandler = new Handler(Looper.myLooper()) { //create handler
-            public void handleMessage(Message msg) {
-                if(msg.what == MainActivity.OUTGOING_MSG){
-                    //send it to server
-                    Log.i(TAG, (Thread.currentThread().getName() + ": ButtonPressed: "+msg.obj));
-                    if(isRecording){
+            public void handleMessage(Message msg) {//parse incoming messages from UI thread while looping
+                if(msg.what == MainActivity.OUTGOING_MSG){//if UI Record button is pressed
+
+                    Log.i(TAG, (Thread.currentThread().getName() + ": Record button Pressed: "+msg.obj));
+                    if(isRecording){ //if state was recording stop recording
                         isRecording=false;
                         recorder.stop();
                         v.pause();
-                    }else{
+                    }else{//if state was not recording start recording
                         isRecording=true;
-                        e_send_to_ui("Sending");
+                        e_send_to_ui("Recording and sending UDP Packets... ");
                         synchronized (lock){
                             lock.notify();
                         }
@@ -146,20 +130,7 @@ class Client extends Thread {
                         recorder.startRecording();
                     }
 
-
-                    /*
-                    try {
-
-                        String str = ((String)(msg.obj) + '\n') ;
-                        DatagramPacket dp = new DatagramPacket(str.getBytes(), str.length(), ip, port);
-                        clientSocket.send(dp);
-
-                    } catch (IOException|NullPointerException e) {
-                        e.printStackTrace();
-                        Log.i(TAG, (Thread.currentThread().getName() + ": Expection catched: "+e.getMessage()));
-                        e_send_to_ui((Thread.currentThread().getName() + ": Expection catched: " + e.getMessage()));
-                    }*/
-                }else if(msg.what == MainActivity.COMMAND){
+                }else if(msg.what == MainActivity.COMMAND){ // run the Runnable from UI thread
                     ((Runnable)msg.obj).run();
                 }
             }
@@ -167,13 +138,13 @@ class Client extends Thread {
         Message msg_h = mainHandler.obtainMessage();
         msg_h.what = MainActivity.CLIENT_HANDLER;
         msg_h.obj = mHandler;
-        mainHandler.sendMessage(msg_h); //connect handler to ui
-        Log.i(TAG, (Thread.currentThread().getName() + ": Sent handler ref to main looping client handler now "));
-        e_send_to_ui((Thread.currentThread().getName() + ": Sent handler ref to main looping client handler now " ));
-        Looper.loop(); //Everything done Msg handler is looping , can communicate with UI
+        mainHandler.sendMessage(msg_h); //Send handler reference  to UI thread
+        Log.i(TAG, (Thread.currentThread().getName() + ": Sent handler ref to main ,looping client handler now "));
+
+        Looper.loop(); //Looping the Client Thread
         e_send_to_ui((Thread.currentThread().getName() + ": End of main looper: " ));
     }
-    public void e_send_to_ui(String m){
+    public void e_send_to_ui(String m){ //Function that prints strings to UI
         Message msg = mainHandler.obtainMessage();
         msg.what = MainActivity.INCOMING_MSG;
         msg.obj = Thread.currentThread().getName() + "|| " +m;
@@ -181,12 +152,8 @@ class Client extends Thread {
     }
 
     public void logExpection(Exception e){
-
         Log.i(TAG, (Thread.currentThread().getName() + ": Expection catched: "+e.getMessage()));
         e_send_to_ui((Thread.currentThread().getName() + ": Expection catched: " + e.getMessage()));
     }
-    /*public void restartListener(){
-        clientListenerT = new Thread(listenerRunnable);
-        clientListenerT.start();
-    }*/
+
 }

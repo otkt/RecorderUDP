@@ -7,28 +7,28 @@ public class Visualizer extends  Thread{
     byte[] inputArray;
     final String refString = "I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I";
     String outputString = "I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I I ";
-    int outRepresentation;
-
     boolean mrun = false ;
     Handler mainHandler  ;
     Object mlock = new Object();
-    boolean mgoingup = true ;
+
     Visualizer(Handler mainHandler , byte[] inputArray ){
+        /*
+        Visualizer objects that is responsible for representing microphone sensor amplitude
+         */
         this.inputArray  = inputArray ;
         this.mainHandler = mainHandler ;
     }
-    public void run(){
+    public void run(){//Runnable for Visualizer thread
 
         while(true){
-            if(mrun) {
+            if(mrun) {//if recording draw microphone amplitude representation every 50ms
                 process();
-                //to_ui(outputString);
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }else{
+            }else{//if not recording block the thread until recording
                 to_ui("Not running. on wait()...");
                 synchronized (mlock){
                     try {
@@ -42,7 +42,7 @@ public class Visualizer extends  Thread{
 
 
     }
-    ///Other Methods
+
     public void begin(){
         mrun = true ;
     }
@@ -50,20 +50,11 @@ public class Visualizer extends  Thread{
     public void pause(){
         mrun = false ;
     }
-    private void zigzag(){
-        if(outputString.length() > 79 && mgoingup){
-            mgoingup = false;
-        }else if(outputString.length() < 5 && !mgoingup){
-            mgoingup = true;
-        }
 
-        if(mgoingup){
-            outputString  = outputString + " I";
-        }else{
-            outputString = outputString.substring(0 , outputString.length()-2);
-        }
-    }
     private void process() {
+        /*
+            Read some pcm data every 50 ms get the max amplitude
+         */
         int max = 0;
         int cur = 0;
         for (int i = 1 ;  i < Client.bytes_in_frames-8 ; i = i+4){
@@ -75,15 +66,12 @@ public class Visualizer extends  Thread{
             }
 
         }
-        //int inp0 = Byte.toUnsignedInt(inputArray[0]);
-        //inp0 = (inp0 > 127) ?  ~inp0 : inp0 ;
-        //to_ui(Math.abs(inputArray[1]) + " || "+Math.abs(inputArray[5]) + " || "+Math.abs(inputArray[9])
-                //+" || "+Math.abs(inputArray[13]) );
+        // Represent max amplitude as string for drawing
         outputString = refString.substring(0,max);
         to_ui(outputString);
 
     }
-    public void to_ui(String m){
+    public void to_ui(String m){//Draw amplitude to UI Visualizer Box
         Message msg = mainHandler.obtainMessage();
         msg.what = MainActivity.VIS;
         msg.obj = m;
