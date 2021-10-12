@@ -13,6 +13,7 @@ import android.text.method.ScrollingMovementMethod;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 
@@ -24,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
     Button recordButton;
     Handler mainHandler; // handler for UI(MainActivity)
     Handler clientHandler;//handler for Client thread
+    EditText editTextIP;
+    EditText editTextPort;
     public static final int  INCOMING_MSG =  1 ;
     public static final int  CLIENT_HANDLER =  3 ;
     public static final int  OUTGOING_MSG =  2 ;
@@ -46,12 +49,17 @@ public class MainActivity extends AppCompatActivity {
             if(v.getId()==R.id.recorderButton) {//Record button is pressed
                 Message msg_h = clientHandler.obtainMessage();
                 msg_h.what = MainActivity.OUTGOING_MSG;
-                msg_h.obj = "Record button pressed(Placeholder object)";
+                String[] arr = {editTextIP.getText().toString(),editTextPort.getText().toString()};
+                msg_h.obj = arr ;
                 clientHandler.sendMessage(msg_h);
             }
         }; //Create anonymous inner class that implements OnClickListener interface
 
         //references from layout
+        editTextIP = findViewById(R.id.numberIP);
+        editTextIP.setText("192.168.0.12");
+        editTextPort = findViewById(R.id.numberPort);
+        editTextPort.setText("6666");
         textView_activity_state = findViewById(R.id.activity_state);
         VisBox = findViewById(R.id.audiogram);
         textView_activity_state.setMovementMethod(new ScrollingMovementMethod());

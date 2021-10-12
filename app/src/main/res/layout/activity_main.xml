@@ -9,13 +9,14 @@
     <TextView
         android:id="@+id/activity_state"
         android:layout_width="match_parent"
-        android:layout_height="600dp"
+        android:layout_height="400dp"
+        android:layout_marginBottom="28dp"
         android:nestedScrollingEnabled="false"
         android:overScrollMode="ifContentScrolls"
         android:scrollbars="vertical"
         android:scrollHorizontally="false"
         android:text="Info Box"
-        app:layout_constraintBottom_toTopOf="@+id/recorderButton"
+        app:layout_constraintBottom_toTopOf="@+id/textView"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
@@ -46,5 +47,46 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/numberIP"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="28dp"
+        android:digits='"0123456789."'
+        android:ems="10"
+        android:hint="ipv4 address"
+        android:inputType="number"
+        android:minHeight="48dp"
+        app:layout_constraintBottom_toTopOf="@+id/recorderButton"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <EditText
+        android:id="@+id/numberPort"
+        android:layout_width="116dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginBottom="28dp"
+        android:digits='"0123456789."'
+        android:ems="10"
+        android:hint="port"
+        android:inputType="number"
+        app:layout_constraintBottom_toTopOf="@+id/recorderButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.244"
+        app:layout_constraintStart_toEndOf="@+id/numberIP" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="324dp"
+        android:layout_height="56dp"
+        android:layout_marginBottom="8dp"
+        android:text="IPv4 Adress and Port number:"
+        android:textSize="20sp"
+        app:layout_constraintBottom_toTopOf="@+id/numberIP"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.333"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

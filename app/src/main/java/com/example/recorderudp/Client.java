@@ -16,6 +16,10 @@ import java.util.Arrays;
 
 
 class Client extends Thread {
+    /*
+     Client objects is responsible for Recording audio , sending raw audio to server with UDP packets
+     and coordinating with User Interface Activity (MainActivity)
+     */
     public static final String TAG = "Client";
     public Handler mHandler; //This threads handler
     public Handler mainHandler; //UI thread handler
@@ -92,7 +96,7 @@ class Client extends Thread {
                     .setBufferSizeInBytes(2*minBuffSize)
                     .build();
 
-            
+
         } catch (SocketException e) {
             e.printStackTrace();
             logExpection(e);
@@ -118,6 +122,16 @@ class Client extends Thread {
                         recorder.stop();
                         v.pause();
                     }else{//if state was not recording start recording
+                        String[] arr = (String[]) msg.obj; // arr[0] is the ip address from ui , arr[1] is port
+                        try {
+                            ip = InetAddress.getByName(arr[0]);
+                            port = Integer.parseInt(arr[1]);
+                            clientSocket.connect(ip,port);
+                        } catch (UnknownHostException e) {
+                            e.printStackTrace();
+                            logExpection(e);
+                        }
+
                         isRecording=true;
                         e_send_to_ui("Recording and sending UDP Packets... ");
                         synchronized (lock){
