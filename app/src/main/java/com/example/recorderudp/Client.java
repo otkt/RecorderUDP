@@ -133,7 +133,7 @@ class Client extends Thread {
                         }
 
                         isRecording=true;
-                        e_send_to_ui("Recording and sending UDP Packets... ");
+                        e_send_to_ui("Recording and sending UDP Packets to "+ip.toString()+":"+port+" ...");
                         synchronized (lock){
                             lock.notify();
                         }
