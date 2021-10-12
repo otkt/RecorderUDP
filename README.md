@@ -17,6 +17,8 @@ VB-CABLE Virtual Audio Device can be used https://vb-audio.com/Cable/ with the p
 Use CABLE Input in python script as output channel and CABLE Output can be used as microphone device in other programs.
 
 
+<img src="https://user-images.githubusercontent.com/14927769/137031209-c5fa2a7a-c23c-407b-896b-641a26a6dc4b.jpg" width="500" />
+
 <img src="https://user-images.githubusercontent.com/14927769/137028083-435d9386-2789-4084-816b-b1db1d2707b4.JPG" width="400" />
 
 <img src="https://user-images.githubusercontent.com/14927769/137028098-3b47d7f7-ecad-464f-ad77-98f7c7e1005a.JPG" width="400" />
